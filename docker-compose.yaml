@@ -1,0 +1,50 @@
+version: '3.9'
+
+services:
+  mysql:
+    container_name: mysql
+    image: mysql:8
+    ports:
+      - 3306:3306
+    volumes:
+      - ~/apps/mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: XXXXXX
+      MYSQL_PASSWORD: XXXXX
+      MYSQL_USER: ghost
+      MYSQL_DATABASE: ghost
+    restart: always
+  ghost:
+    container_name: ghost
+    image: ghost:alpine
+    environment:
+      url: https://xxxx
+      database__client: mysql
+      database__connection__host: mysql
+      database__connection__database: ghost
+      database__connection__user: ghost
+      database__connection__password: XXXXX
+    depends_on:
+      - mysql
+    restart: always
+    volumes:
+      - ./apps/ghost:/var/lib/ghost/content
+  nginx:
+    container_name: nginx
+    image: nginx:alpine
+    restart: always
+    depends_on:
+      - ghost
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./apps/nginx/conf.d:/etc/nginx/conf.d/:ro
+      - ./apps/certbot/conf:/etc/letsencrypt:ro
+      - ./apps/certbot/www:/var/www/certbot:ro
+  certbot:
+    container_name: certbot
+    image: certbot/certbot
+    volumes:
+      - ./apps/certbot/conf:/etc/letsencrypt:rw
+      - ./apps/certbot/www:/var/www/certbot:rw
